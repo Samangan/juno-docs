@@ -32,11 +32,15 @@ Gas is an abstract unit representing the computational cost of a transaction.
 
 It is used to ensure that all of the transactions within a block can finalize among the validator set within a reasonable amount of time, prevent abuse / spam, and create an incentive structure for validator operators (through gas fees).
 
-`Gas fees = gas * gas-prices`
-
 Each transaction has two gas related values:
 * `GasWanted`: Amount of gas requested for transaction. It is provided by users when they generate the transaction
 * `GasUsed`: Amount of gas actually consumed by transaction
+
+The final gas fee for a transaction is below:
+
+`Gas fees = GasWanted * gas-prices`
+
+Note that even if `GasUsed` is less than `GasWanted` we still just charge the maximum the user is willing to pay. This is so that we don't have to worry about users setting extremley high `GasWanted` and small `GasUsed` and hitting the block's MaxGas setting. There has been [some talk](https://github.com/cosmos/cosmos-sdk/issues/2150) about adding partial refund logic.
 
 </br>
 
@@ -45,8 +49,6 @@ Each transaction has two gas related values:
 ### Tendermint
 
 Gas calculation is not done within tendermint.
-
-</br>
 
 ### Cosmos SDK
 
@@ -61,7 +63,6 @@ Gas is consumed in a variety of places in the SDK but mostly happens when:
 
 This gas meter is also used by the Cosmos modules, accessed through the Context still, to charge gas for whatever the module devs think is relevant.
 
-</br>
 
 ### Cosmwasm Module
 
@@ -71,7 +72,6 @@ The cosmwasm go module also calls out to the [Cosmwasm wasmer VM](https://github
 
 I originally thought that this cost per [wasm operation](https://webassembly.github.io/spec/core/syntax/instructions.html) was going to be the largest part of the cost of the smart contract transactions, but from my limited digging into some dao-dao contracts it appears to be a pretty insignifcant percent of the overall gas costs. This makes me think that either the contracts in question were really computationally light weight, or this per wasm operation gas cost was mainly there to prevent people from really abusing things (like writing infinte loops or doing really CPU intensive work).
 
-</br>
 
 ### Juno Specific Configuration
 * Cosmwasm module [gas config overrides](https://github.com/CosmosContracts/juno/blob/main/app/wasm_config.go#L8-L11)
@@ -85,9 +85,7 @@ I originally thought that this cost per [wasm operation](https://webassembly.git
 #### Max Gas Checks
 
 Gas is mostly irrelevant to the tendermint layer, and [completely ignored during consensus](https://docs.tendermint.com/master/spec/abci/apps.html#gas):
-```
-Note that Tendermint does not currently enforce anything about Gas in the consensus, only the mempool. This means it does not guarantee that committed blocks satisfy these rules! It is the application's responsibility to return non-zero response codes when gas limits are exceeded.
-```
+>Note that Tendermint does not currently enforce anything about Gas in the consensus, only the mempool. This means it does not guarantee that committed blocks satisfy these rules! It is the application's responsibility to return non-zero response codes when gas limits are exceeded.
 
 However there is a tendermint [Consensus Param](https://github.com/tendermint/tendermint/blob/master/docs/architecture/adr-005-consensus-params.md) called [ConsensusParams.Block.MaxGas](https://docs.tendermint.com/master/spec/abci/apps.html#blockparams-maxgas) which when set does enforce that:
 * `GasWanted` <= `ConsensusParams.Block.MaxGas` for [all txs in the mempool](https://github.com/tendermint/tendermint/blob/37287ead94aa010f2497a5df414c64b85e4861ce/node/setup.go#L160)
@@ -99,7 +97,6 @@ Tendermint only cares about `GasWanted`, Tendermint doesn't even use `GasUsed`. 
 
 Currently, CosmosSDK builds a block of transactions from the mempool in a FIFO ordering, but tendermint added support to allow for [prioritizing the transactions in the mempool](https://github.com/tendermint/tendermint/blob/f9e0f77af333f4ab7bfa1c0c303f7db47cec0c9e/docs/architecture/adr-067-mempool-refactor.md). So Cosmos SDK could allow for fee based priorization in the future, but for now I think there's no plan to move forward with fee based prioritization like in Etherium.
 
-</br>
 
 ### Cosmos SDK
 
@@ -109,17 +106,14 @@ Cosmos SDK uses [two GasMeters](https://docs.cosmos.network/master/basics/gas-fe
 #### Min Gas Checks
 There is a Cosmos SDK local node config called `minimum-gas-prices`, that filters out transactions that have gas fees lower than the configured amount when creating a block to propose, and adding transactions to the mempool (TODO: Find the code for this to dig further).
 
-It is worth noting that `minimum-gas-prices` is a config that each validator can set locally, and it is not agreed upon through governance. This means that validators [could actually include a bunch of 0 fee transactions when they are the proposer](https://docs.cosmos.network/master/core/baseapp.html#delivertx). There is [some discussion](https://github.com/cosmos/cosmos-sdk/discussions/8224) to try and make a min gas price that must be set via something like a Consensus Param controlled through governance like `ConsensusParams.Block.MaxGas` (still allowing validators to set an amount higher than this absolute minimum). We need to investigate how worrisome this 0 fee spam could actually be when a rogue validator would only be up for proposal 150th of the time.
+It is worth noting that `minimum-gas-prices` is a config that each validator can set locally, and it is not agreed upon through governance. This means that validators [could actually include a bunch of 0 fee transactions when they are the proposer](https://docs.cosmos.network/master/core/baseapp.html#delivertx). There is [some discussion](https://github.com/cosmos/cosmos-sdk/discussions/8224) to try and make a min gas price that must be set via something like a Consensus Param controlled through governance like `ConsensusParams.Block.MaxGas` (still allowing validators to set an amount higher than this absolute minimum). We need to investigate how worrisome this 0 fee spam could actually be in practice via rouge validators or validators that forget to set this price.
 
-</br>
 
 ### Cosmwasm Module
 
 #### Max Gas Checks
 
 The cosmwasm module has a local node configuration called `query_gas_limit` which allows you to set a maximum gas limit for all [smart contract external queries](https://docs.cosmwasm.com/docs/1.0/architecture/query). Because those queries hit a single node, out of band of the block / transaction processing, they do not actually have an actual gas fee. So this limit is set to avoid DOSing RPC nodes with query calls.
-
-</br>
 
 ### Juno Specific Configuration
 * Tendermint's `ConsensusParams.Block.MaxGas` is [currently set to `100000000` for Juno](https://www.mintscan.io/juno/proposals/6)
@@ -134,7 +128,6 @@ The cosmwasm module has a local node configuration called `query_gas_limit` whic
 * Using more gas than you paid for:
   * Ex: https://github.com/CosmWasm/cosmwasm/issues/456#issuecomment-660304817
 * Possible chain halts by exhausting all of the gas for a block using loopholes?
- * Is it possible to write a smart contract that just blocks / sleeps? Is that somehow blocked by the wasmer runtime? If so how does that happen.
 
 </br>
 
