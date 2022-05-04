@@ -26,6 +26,8 @@ description: What you need to know about gas as a Juno smart contract developer
 
 What you need to know about gas as a Juno smart contract developer.
 
+This is a work in progress, please hack on this and add fixes/clarifications where needed.
+
 ## What is Gas
 
 Gas is an abstract unit representing the computational cost of a transaction. 
