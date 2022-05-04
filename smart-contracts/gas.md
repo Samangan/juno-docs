@@ -2,7 +2,27 @@
 description: What you need to know about gas as a Juno smart contract developer
 ---
 
+<!-- omit in toc -->
 # Gas and You
+
+- [What is Gas](#what-is-gas)
+- [How Gas is Calculated](#how-gas-is-calculated)
+  - [Tendermint](#tendermint)
+  - [Cosmos SDK](#cosmos-sdk)
+  - [Cosmwasm Module](#cosmwasm-module)
+  - [Juno Specific Configuration](#juno-specific-configuration)
+- [How Gas is Used](#how-gas-is-used)
+  - [Tendermint](#tendermint-1)
+    - [Max Gas Checks](#max-gas-checks)
+    - [Gas Fee based prioritization](#gas-fee-based-prioritization)
+  - [Cosmos SDK](#cosmos-sdk-1)
+    - [Max Gas Checks](#max-gas-checks-1)
+    - [Min Gas Checks](#min-gas-checks)
+  - [Cosmwasm Module](#cosmwasm-module-1)
+    - [Max Gas Checks](#max-gas-checks-2)
+  - [Juno Specific Configuration](#juno-specific-configuration-1)
+- [Security Concerns to Investigate](#security-concerns-to-investigate)
+- [Future Work](#future-work)
 
 What you need to know about gas as a Juno smart contract developer.
 
