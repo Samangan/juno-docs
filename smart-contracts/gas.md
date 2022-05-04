@@ -5,25 +5,6 @@ description: What you need to know about gas as a Juno smart contract developer
 <!-- omit in toc -->
 # Gas and You
 
-- [What is Gas](#what-is-gas)
-- [How Gas is Calculated](#how-gas-is-calculated)
-  - [Tendermint](#tendermint)
-  - [Cosmos SDK](#cosmos-sdk)
-  - [Cosmwasm Module](#cosmwasm-module)
-  - [Juno Specific Configuration](#juno-specific-configuration)
-- [How Gas is Used](#how-gas-is-used)
-  - [Tendermint](#tendermint-1)
-    - [Max Gas Checks](#max-gas-checks)
-    - [Gas Fee based prioritization](#gas-fee-based-prioritization)
-  - [Cosmos SDK](#cosmos-sdk-1)
-    - [Max Gas Checks](#max-gas-checks-1)
-    - [Min Gas Checks](#min-gas-checks)
-  - [Cosmwasm Module](#cosmwasm-module-1)
-    - [Max Gas Checks](#max-gas-checks-2)
-  - [Juno Specific Configuration](#juno-specific-configuration-1)
-- [Security Concerns to Investigate](#security-concerns-to-investigate)
-- [Future Work](#future-work)
-
 What you need to know about gas as a Juno smart contract developer.
 
 This is a work in progress, please hack on this and add fixes/clarifications where needed.
@@ -126,6 +107,8 @@ The cosmwasm module has a local node configuration called `query_gas_limit` whic
 </br>
 
 ## Security Concerns to Investigate
+* Cosmwasm vm wasm operations [currently have a fixed cost for all operations](https://github.com/CosmWasm/cosmwasm/blob/v1.0.0-beta/packages/vm/src/wasm_backend/store.rs#L24-L32) which means we could figure out which wasm operations are the most computationaly intensive.
+* Cosmos SDK `GasMeter` [panics once we charge more than the gas limit](https://github.com/cosmos/cosmos-sdk/blob/main/store/types/gas.go#L115), but does that mean that you could drastically overshoot the `GasUsed` for that single gas cost and still cause a massive transaction processing slowdown? What safety measures are in place to prevent this?
 * Gas calculation is very complicated, there are surely loopholes in the gas metering / cost configuration that can be exploited:
   * Ex: at a very quick glance, [things that are currently configured for 0 gas costs looked sus](https://github.com/CosmWasm/wasmd/blob/d5ef3ba2de3c9c87adb2d8826da35f4c5b07bc3c/x/wasm/keeper/gas_register.go#L43-L48)
 * As mentioned earlier, how much damage can a validator do by not setting `minimum-gas-prices` and flooding their block proposals with 0 fee transactions?
