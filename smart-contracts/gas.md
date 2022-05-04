@@ -19,7 +19,6 @@ Each transaction has two gas related values:
 * `GasUsed`: Amount of gas actually consumed by transaction
 
 </br>
-</br>
 
 ## How Gas is Calculated
 
@@ -57,7 +56,6 @@ I originally thought that this cost per [wasm operation](https://webassembly.git
 ### Juno Specific Configuration
 * Cosmwasm module [gas config overrides](https://github.com/CosmosContracts/juno/blob/main/app/wasm_config.go#L8-L11)
 
-</br>
 </br>
 
 ## How Gas is Used
@@ -108,7 +106,6 @@ The cosmwasm module has a local node configuration called `query_gas_limit` whic
 * Juno's `AnteHandler` implementation is the default cosmosSDK auth module
 
 </br>
-</br>
 
 ## Security Concerns to Investigate
 * Gas calculation is very complicated, there are surely loopholes in the gas metering / cost configuration that can be exploited:
@@ -119,7 +116,6 @@ The cosmwasm module has a local node configuration called `query_gas_limit` whic
 * Possible chain halts by exhausting all of the gas for a block using loopholes?
  * Is it possible to write a smart contract that just blocks / sleeps? Is that somehow blocked by the wasmer runtime? If so how does that happen.
 
-</br>
 </br>
 
 ## Future Work
